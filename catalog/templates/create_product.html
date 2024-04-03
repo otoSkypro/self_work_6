@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}Создание продукта{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Создание продукта</h1>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">Создать продукт</button>
+        </form>
+        <br>
+        <a class="btn btn-secondary" href="{% url 'catalog:home' %}">Отмена</a>
+    </div>
+{% endblock %}

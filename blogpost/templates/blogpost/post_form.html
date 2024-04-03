@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if form.instance.pk %}Редактировать{% else %}Создать{% endif %} запись в блоге{% endblock %}
+
+{% block content %}
+  <h1>{% if form.instance.pk %}Редактировать{% else %}Создать{% endif %} запись в блоге</h1>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Сохранить</button>
+  </form>
+    <br>
+  <a class="btn btn-outline-primary mt-3" href="{% url 'blogpost:post_list' %}">Вернуться на главную страницу блога</a>
+{% endblock %}
