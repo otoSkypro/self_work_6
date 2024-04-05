@@ -1,16 +1,53 @@
+<!-- create_product.html -->
 {% extends 'base.html' %}
 
 {% block title %}Создание продукта{% endblock %}
 
 {% block content %}
-    <div class="container">
-        <h1>Создание продукта</h1>
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="btn btn-primary">Создать продукт</button>
-        </form>
-        <br>
-        <a class="btn btn-secondary" href="{% url 'catalog:home' %}">Отмена</a>
-    </div>
+<div class="container">
+    <h1>Создание продукта</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- Поля для создания продукта с использованием стиля из product_detail.html -->
+        <div class="mb-3">
+            <label for="id_name" class="form-label">Название продукта:</label>
+            {{ form.name }}
+        </div>
+        <div class="mb-3">
+            <label for="id_description" class="form-label">Описание:</label>
+            {{ form.description }}
+        </div>
+        <div class="mb-3">
+            <label for="id_image" class="form-label">Изображение:</label>
+            {{ form.image }}
+        </div>
+        <div class="mb-3">
+            <label for="id_category" class="form-label">Категория:</label>
+            {{ form.category }}
+        </div>
+        <div class="mb-3">
+            <label for="id_price" class="form-label">Цена:</label>
+            {{ form.price }}
+        </div>
+
+        <!-- Поля для добавления версии продукта -->
+        <div class="form-group mt-3">
+            <label for="id_version_number">Номер версии:</label>
+            <input type="text" name="version_number" id="id_version_number" class="form-control" size="5" required>
+        </div>
+        <div class="form-group">
+            <label for="id_version_name">Название версии:</label>
+            <input type="text" name="version_name" id="id_version_name" class="form-control" size="20" required>
+        </div>
+        <div class="form-check">
+            <input type="checkbox" name="is_active" id="id_is_active" class="form-check-input">
+            <label for="id_is_active" class="form-check-label">Активная версия</label>
+        </div>
+
+        <button type="submit" class="btn btn-primary mt-3">Создать продукт</button>
+    </form>
+    <br>
+    <a class="btn btn-secondary" href="{% url 'catalog:product_list' %}">Отмена</a>
+</div>
 {% endblock %}

@@ -8,6 +8,9 @@ from .views import (
     ProductDetailView,
     CreateProductView,
     ProductListView,
+    EditProductView,
+    DeleteProductView,
+    AddVersionView,
 )
 
 app_name = 'catalog'
@@ -19,6 +22,9 @@ urlpatterns = [
     path('product/<int:product_id>/', ProductDetailView.as_view(), name='product_detail'),
     path('create_product/', CreateProductView.as_view(), name='create_product'),
     path('products/', ProductListView.as_view(), name='product_list'),
+    path('product/<int:product_id>/edit/', EditProductView.as_view(), name='edit_product'),
+    path('product/<int:product_id>/delete/', DeleteProductView.as_view(), name='delete_product'),
+    path('add_version/', AddVersionView.as_view(), name='add_version'),
 ]
 
 if settings.DEBUG:

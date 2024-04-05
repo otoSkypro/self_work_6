@@ -1,23 +1,35 @@
+<!-- product_list.html -->
 {% extends 'base.html' %}
 
 {% block title %}Список продуктов{% endblock %}
 
 {% block content %}
-    <div class="container">
-        <h1>Список продуктов</h1>
-        {% for product in products %}
-            <div class="product">
-                <h2>{{ product.name }}</h2>
-                <p>{{ product.description }}</p>
-                <!-- Остальные поля продукта -->
-            </div>
-        {% endfor %}
+<div class="container">
+    <h1>Список продуктов</h1>
+    {% for product in products %}
+    <div class="product">
+        <h2>{{ product.name }}</h2>
+        <p>{{ product.description }}</p>
+        <!-- Остальные поля продукта -->
 
-        <div class="pagination">
+        {% if product.active_version %}
+        <p>Активная версия: {{ product.active_version.version_number }} - {{ product.active_version.version_name }}</p>
+        {% else %}
+        <p>Нет активной версии</p>
+        {% endif %}
+
+        <a href="{% url 'catalog:product_detail' product_id=product.id %}" class="btn btn-outline-primary">Подробнее</a>
+        <a href="{% url 'catalog:edit_product' product_id=product.id %}"
+           class="btn btn-outline-warning">Редактировать</a>
+        <a href="{% url 'catalog:delete_product' product_id=product.id %}" class="btn btn-outline-danger">Удалить</a>
+    </div>
+    {% endfor %}
+    <br>
+    <div class="pagination">
             <span class="step-links">
                 {% if products.has_previous %}
-                    <a href="?page=1">&laquo; первая</a>
-                    <a href="?page={{ products.previous_page_number }}">предыдущая</a>
+                    <a href="?page=1" class="btn btn-outline-primary">&laquo; первая</a>
+                    <a href="?page={{ products.previous_page_number }}" class="btn btn-outline-primary">предыдущая</a>
                 {% endif %}
 
                 <span class="current">
@@ -25,10 +37,13 @@
                 </span>
 
                 {% if products.has_next %}
-                    <a href="?page={{ products.next_page_number }}">следующая</a>
-                    <a href="?page={{ products.paginator.num_pages }}">последняя &raquo;</a>
+                    <a href="?page={{ products.next_page_number }}" class="btn btn-outline-primary">следующая</a>
+                    <a href="?page={{ products.paginator.num_pages }}"
+                       class="btn btn-outline-primary">последняя &raquo;</a>
                 {% endif %}
             </span>
-        </div>
     </div>
+
+    <a href="{% url 'catalog:home' %}" class="btn btn-primary mt-3">Вернуться в каталог</a>
+</div>
 {% endblock %}

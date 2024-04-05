@@ -29,18 +29,19 @@
             </div>
         </div>
         {% for product in latest_products %}
-            <div class="col-4">
-                <div class="card mb-4 box-shadow">
-                    <div class="card-header">
-                        <h4 class="my-0 font-weight-normal">{{ product.name }}</h4>
-                    </div>
-                    <div class="card-body">
-                        <p class="card-text">{{ product.description|truncatechars:100 }}</p>
-                        <h1 class="text-center card-title pricing-card-title">${{ product.price }}</h1>
-                        <a href="{% url 'catalog:product_detail' product.id %}" class="btn btn-lg btn-block btn-outline-primary">Подробнее</a>
-                    </div>
+        <div class="col-4">
+            <div class="card mb-4 box-shadow">
+                <div class="card-header">
+                    <h4 class="my-0 font-weight-normal">{{ product.name }}</h4>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ product.description|truncatechars:100 }}</p>
+                    <h1 class="text-center card-title pricing-card-title">${{ product.price }}</h1>
+                    <a href="{% url 'catalog:product_detail' product.id %}"
+                       class="btn btn-lg btn-block btn-outline-primary">Подробнее</a>
                 </div>
             </div>
+        </div>
         {% endfor %}
     </div>
 </div>
