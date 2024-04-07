@@ -1,0 +1,20 @@
+<!-- users/templates/users/verify_email.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="col-12">
+    <div class="row">
+        <div class="col-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Поздравляем! Вы успешно зарегистрированы!</h3>
+                </div>
+                <div class="card-body">
+                    <p>Подтвердите адрес электронной почты пройдя по ссылке в письме</p>
+                    <a type="button" class="btn btn-outline-primary" href="{% url 'catalog:home'%}">На главную</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
