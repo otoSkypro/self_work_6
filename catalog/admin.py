@@ -1,12 +1,11 @@
+# catalog/admin.py
 from django.contrib import admin
 from .models import Category, Product
 
 
 class ProductAdmin(admin.ModelAdmin):
-    list_display = (
-    'id', 'name', 'price', 'category', 'publish_status', 'moderation_status')  # Добавляем столбец с статусом модерации
-    list_filter = (
-    'category', 'publish_status', 'moderation_status')  # Добавляем фильтр по статусу публикации и модерации
+    list_display = ('id', 'name', 'price', 'category', 'publish_status', 'moderation_status')  # Добавляем столбец с статусом модерации
+    list_filter = ('category', 'publish_status', 'moderation_status')  # Добавляем фильтр по статусу публикации и модерации
     search_fields = ('name', 'description')
     actions = ['make_published', 'make_draft', 'make_archived', 'approve_products', 'reject_products']
 

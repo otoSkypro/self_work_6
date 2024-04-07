@@ -1,3 +1,4 @@
+# catalog/models.py
 from users.models import User
 from django.db import models
 
@@ -51,10 +52,8 @@ class Product(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(User, default=1, on_delete=models.CASCADE, verbose_name='пользователь')
-    publish_status = models.CharField(max_length=20, choices=PUBLISH_CHOICES, default='draft',
-                                      verbose_name='Статус публикации')
-    moderation_status = models.CharField(max_length=20, choices=MODERATION_CHOICES, default='pending',
-                                         verbose_name='Статус модерации')
+    publish_status = models.CharField(max_length=20, choices=PUBLISH_CHOICES, default='draft', verbose_name='Статус публикации')
+    moderation_status = models.CharField(max_length=20, choices=MODERATION_CHOICES, default='pending', verbose_name='Статус модерации')
 
     def is_owner(self, user):
         return self.user == user
