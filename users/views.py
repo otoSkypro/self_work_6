@@ -1,3 +1,4 @@
+# users/views.py
 from django.contrib.auth.tokens import default_token_generator as token_generator
 from django.core.exceptions import ValidationError
 from django.utils.http import urlsafe_base64_decode

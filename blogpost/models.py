@@ -1,3 +1,4 @@
+# blogpost/models.py
 from django.utils.text import slugify
 from django.urls import reverse
 from django.db import models

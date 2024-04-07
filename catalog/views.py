@@ -1,9 +1,11 @@
+# catalog/views.py
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Product, Contact, Version
 from .forms import ProductForm, VersionForm
 from django.contrib import messages
 from django.views import View
+from django.core.cache import cache
 
 
 class ProductListView(View):
@@ -118,12 +120,17 @@ class SubmitFeedbackView(View):
 
 class ProductDetailView(View):
     def get(self, request, product_id):
-        product = Product.objects.get(pk=product_id)
+        product = cache.get(f'product_{product_id}')
+
+        if not product:
+            # Если продукт не найден в кеше, получаем его из базы данных и кешируем
+            product = Product.objects.get(pk=product_id)
+            cache.set(f'product_{product_id}', product)
+
         versions = Version.objects.filter(product=product)
         version_form = VersionForm()
 
-        return render(request, 'product_detail.html',
-                      {'product': product, 'versions': versions, 'version_form': version_form})
+        return render(request, 'product_detail.html', {'product': product, 'versions': versions, 'version_form': version_form})
 
     def post(self, request, product_id):
         product = Product.objects.get(pk=product_id)
@@ -136,8 +143,7 @@ class ProductDetailView(View):
             version.save()
             return redirect('catalog:product_detail', product_id=product_id)
 
-        return render(request, 'product_detail.html',
-                      {'product': product, 'versions': versions, 'version_form': version_form})
+        return render(request, 'product_detail.html', {'product': product, 'versions': versions, 'version_form': version_form})
 
 
 class AddVersionView(View):
