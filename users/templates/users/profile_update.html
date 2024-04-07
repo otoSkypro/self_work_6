@@ -1,0 +1,58 @@
+<!-- users/templates/users/profile_update.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="container mt-5">
+    <h2 class="mb-4">Редактировать профиль</h2>
+
+    <form method="post" enctype="multipart/form-data" action="{% url 'users:profile_update' %}" class="row g-3">
+      {% csrf_token %}
+
+      <!-- Username -->
+      <div class="col-md-6">
+        <label for="id_username" class="form-label">Имя пользователя</label>
+        {{ form.username }}
+      </div>
+
+      <!-- First Name -->
+      <div class="col-md-6">
+        <label for="id_first_name" class="form-label">Имя</label>
+        {{ form.first_name }}
+      </div>
+
+      <!-- Last Name -->
+      <div class="col-md-6">
+        <label for="id_last_name" class="form-label">Фамилия</label>
+        {{ form.last_name }}
+      </div>
+
+      <!-- Phone Number -->
+      <div class="col-md-6">
+        <label for="id_phone_number" class="form-label">Номер телефона</label>
+        {{ form.phone_number }}
+      </div>
+
+      <!-- Country -->
+      <div class="col-md-6">
+        <label for="id_country" class="form-label">Страна</label>
+        {{ form.country }}
+      </div>
+
+      <!-- Avatar -->
+      <div class="col-md-6">
+        <label for="id_avatar" class="form-label">Аватар</label>
+        {{ form.avatar }}
+      </div>
+
+      <!-- Save Changes Button -->
+      <div class="col-12">
+        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+      </div>
+    </form>
+
+    <!-- Back to Profile Button -->
+    <div class="mt-3">
+      <a class="btn btn-outline-primary" href="{% url 'users:profile' %}">Вернуться к профилю</a>
+    </div>
+  </div>
+{% endblock %}

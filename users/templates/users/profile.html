@@ -1,0 +1,28 @@
+<!-- users/templates/users/profile.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Профиль пользователя: {{ user.username }}</h2>
+
+  <!-- Вся информация о профиле пользователя -->
+  <ul>
+    <li><strong>Имя пользователя:</strong> {{ user.username }}</li>
+    <li><strong>Имя:</strong> {{ user.first_name }}</li>
+    <li><strong>Фамилия:</strong> {{ user.last_name }}</li>
+    <li><strong>Номер телефона:</strong> {{ user.phone }}</li>
+    <li><strong>Страна:</strong> {{ user.country }}</li>
+
+    <!-- Проверка, есть ли у пользователя аватар -->
+    {% if user.avatar %}
+      <li><strong>Аватар:</strong> <img src="{{ user.avatar.url }}" alt="Avatar"></li>
+    {% endif %}
+
+    <!-- Добавьте остальные поля вашей модели пользователя -->
+  </ul>
+
+  <!-- Кнопка "Редактировать профиль" -->
+  <a class="btn btn-outline-primary" href="{% url 'users:profile_update' %}">Редактировать профиль</a>
+
+  <!-- Кнопка "Вернуться на главную" -->
+  <a class="btn btn-outline-primary" href="{% url 'catalog:home' %}">Вернуться на главную</a>
+{% endblock %}

@@ -1,11 +1,11 @@
-from django.db import models
 from django.utils.text import slugify
 from django.urls import reverse
+from django.db import models
 
 
 class BlogPost(models.Model):
-    title = models.CharField(max_length=255)
-    slug = models.SlugField(unique=True, blank=True)
+    title = models.CharField(max_length=555)
+    slug = models.SlugField(unique=True, blank=True, max_length=555)  # Увеличиваем max_length
     content = models.TextField()
     preview_image = models.ImageField(upload_to='blogpost/images/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -20,11 +20,11 @@ class BlogPost(models.Model):
         unique_slug = slug
         counter = 1
 
-        while BlogPost.objects.filter(slug=unique_slug).exists():
+        while BlogPost.objects.filter(slug=unique_slug).exclude(pk=self.pk).exists():
             unique_slug = f"{slug}-{counter}"
             counter += 1
 
-        return unique_slug
+        return unique_slug[:555]  # Ограничим длину слага до 355 символов
 
     def save(self, *args, **kwargs):
         """
