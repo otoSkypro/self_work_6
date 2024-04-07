@@ -1,78 +1,51 @@
-# blogpost/views.py
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import Http404
+from django.urls import reverse_lazy, reverse
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
-from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse_lazy
-from .models import BlogPost
-from .forms import BlogPostForm
+
+from blog.models import Post
 
 
-class BlogPostListView(ListView):
-    model = BlogPost
-    template_name = 'blogpost/post_list.html'
-    context_object_name = 'object_list'
-
-    def get_queryset(self):
-        return BlogPost.objects.filter(is_published=True)
+class PostListView(ListView):
+    model = Post
 
 
-class BlogPostDetailView(DetailView):
-    model = BlogPost
-    template_name = 'blogpost/post_detail.html'
+class PostDetailView(LoginRequiredMixin, DetailView):
+    model = Post
 
-    def get(self, request, *args, **kwargs):
-        response = super().get(request, *args, **kwargs)
-        # Увеличение счетчика просмотров
-        self.object.views += 1
+
+class PostCreateView(LoginRequiredMixin, CreateView):
+    model = Post
+    fields = ('title', 'body',)
+    success_url = reverse_lazy('blog:post_list')
+
+    def form_valid(self, form):
+        self.object = form.save()
+        self.object.owner = self.request.user
         self.object.save()
-        return response
-
-
-class BlogPostCreateView(CreateView):
-    model = BlogPost
-    form_class = BlogPostForm
-    template_name = 'blogpost/post_form.html'
-
-    def form_valid(self, form):
-        form.instance.slug = form.instance.generate_slug()
         return super().form_valid(form)
 
 
-class BlogPostUpdateView(UpdateView):
-    model = BlogPost
-    form_class = BlogPostForm
-    template_name = 'blogpost/post_form.html'
+class PostUpdateView(LoginRequiredMixin, UpdateView):
+    model = Post
+    fields = ('title', 'body',)
 
-    def form_valid(self, form):
-        form.instance.slug = form.instance.generate_slug()
-        return super().form_valid(form)
+    def get_object(self, queryset=None):
+        self.object = super().get_object(queryset)
+        if not self.request.user.is_superuser or self.object.owner != self.request.user:
+            raise Http404
+        return self.object
 
-
-class BlogPostDeleteView(DeleteView):
-    model = BlogPost
-    template_name = 'blogpost/post_confirm_delete.html'
-    success_url = reverse_lazy('blogpost:post_list')
+    def get_success_url(self):
+        return reverse('blog:post_view', args=[self.kwargs.get('pk')])
 
 
-def post_detail(request, slug):
-    post = get_object_or_404(BlogPost, slug=slug, is_published=True)
+class PostDeleteView(LoginRequiredMixin, DeleteView):
+    model = Post
+    success_url = reverse_lazy('blog:post_list')
 
-    # Увеличение счетчика просмотров
-    post.views += 1
-    post.save()
-
-    return render(request, 'blogpost/post_detail.html', {'object': post})
-
-
-def post_edit(request, slug):
-    post = get_object_or_404(BlogPost, slug=slug)
-
-    if request.method == 'POST':
-        form = BlogPostForm(request.POST, request.FILES, instance=post)
-        if form.is_valid():
-            form.instance.slug = form.instance.generate_slug()
-            form.save()
-            return redirect('blogpost:post_detail', slug=post.slug)
-    else:
-        form = BlogPostForm(instance=post)
-
-    return render(request, 'blogpost/post_form.html', {'form': form})
+    def get_object(self, queryset=None):
+        self.object = super().get_object(queryset)
+        if self.object.owner != self.request.user:
+            raise Http404
+        return self.object
