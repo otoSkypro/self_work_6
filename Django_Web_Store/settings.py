@@ -16,6 +16,7 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
@@ -26,6 +27,7 @@ SECRET_KEY = 'django-insecure-ews1*!f=syj3$&*f1rzs0ti%9am7p$=&r)klctvi#57pz#r15d
 DEBUG = True
 
 ALLOWED_HOSTS = []
+
 
 # Application definition
 
@@ -45,6 +47,7 @@ INSTALLED_APPS = [
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap4'
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -79,6 +82,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'Django_Web_Store.wsgi.application'
 
+
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
@@ -97,6 +101,7 @@ DATABASES = {
     }
 }
 
+
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
@@ -114,6 +119,7 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
@@ -145,6 +151,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
 # Настройки для работы с электронной почтой.
 # Обратите внимание, что вы должны использовать свой логин, пароль и адрес электронной почты Яндекса.
 # Теперь, когда статья достигнет 100 просмотров, вы получите письмо на указанный вами адрес электронной почты.
@@ -159,11 +166,13 @@ DEFAULT_FROM_EMAIL = 'ew.ermack2015@yandex.ru'
 SERVER_EMAIL = 'ew.ermack2015@yandex.ru'
 EMAIL_ADMIN = EMAIL_HOST_USER
 
+
 AUTH_USER_MODEL = 'users.User'
 LOGIN_URL = 'users:login'
 LOGOUT_URL = 'users:logout'
 LOGOUT_REDIRECT_URL = '/'
 LOGIN_REDIRECT_URL = '/'
+
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',

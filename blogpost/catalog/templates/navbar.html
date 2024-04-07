@@ -1,0 +1,17 @@
+<div class="d-flex flex-row">
+    <a class="p-2 btn btn-outline-primary me-2" href="{% url 'catalog:home' %}">Каталог</a>
+    <a class="p-2 btn btn-outline-primary me-2" href="{% url 'catalog:contacts' %}">Контакты</a>
+        <a class="p-2 btn btn-outline-primary me-2" href="{% url 'blogpost:post_list' %}">Блог</a>
+
+    {% if user.is_authenticated %}
+        <!-- Если пользователь аутентифицирован, покажем кнопку "Мой профиль" -->
+        <a class="p-2 btn btn-outline-primary me-2" href="{% url 'catalog:create_product' %}">Создать продукт</a>
+        <a class="p-2 btn btn-outline-primary me-2" href="{% url 'catalog:product_list' %}">Список продуктов</a>
+        <a class="p-2 btn btn-outline-primary me-2" href="{% url 'users:profile' %}">Мой профиль</a>
+        <a class="p-2 btn btn-outline-danger me-2" href="{% url 'users:logout' %}">Выход</a>
+    {% else %}
+        <!-- Если пользователь не аутентифицирован, покажем кнопки входа и регистрации -->
+        <a class="p-2 btn btn-outline-primary me-2" href="{% url 'users:login' %}">Вход</a>
+        <a class="p-2 btn btn-outline-success" href="{% url 'users:register' %}">Регистрация</a>
+    {% endif %}
+</div>
