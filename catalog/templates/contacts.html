@@ -41,31 +41,31 @@
                             <div class="mb-3">
                                 <label for="name">Имя</label>
                                 <input type="text" name="name" class="form-control" id="name" placeholder="Ваше имя"
-                                       required>
+                                    required>
                             </div>
                             <div class="mb-3">
                                 <label for="phone">Телефон</label>
                                 <input type="text" name="phone" class="form-control" id="phone"
-                                       placeholder="Контактный телефон" required>
+                                    placeholder="Контактный телефон" required>
                             </div>
                             <div class="mb-3">
                                 <label for="message">Сообщение</label>
                                 <textarea type="text" name="message" class="form-control" id="message"
-                                          placeholder="Текст сообщения" required></textarea>
+                                    placeholder="Текст сообщения" required></textarea>
                             </div>
                             <button name="SubmitMessage" type="submit"
-                                    class="btn btn-lg btn-block btn-outline-primary">Отправить
+                                class="btn btn-lg btn-block btn-outline-primary">Отправить
                             </button>
                         </form>
 
                         {% if messages %}
-                        <div class="mt-3">
-                            {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }}">
-                                {{ message }}
+                            <div class="mt-3">
+                                {% for message in messages %}
+                                    <div class="alert alert-{{ message.tags }}">
+                                        {{ message }}
+                                    </div>
+                                {% endfor %}
                             </div>
-                            {% endfor %}
-                        </div>
                         {% endif %}
                     </div>
                 </div>
@@ -77,7 +77,7 @@
         <h3>Список контактов</h3>
         <ul>
             {% for contact in contacts %}
-            <li>{{ contact.name }} - {{ contact.phone }} - {{ contact.message }} - {{ contact.created_at }}</li>
+                <li>{{ contact.name }} - {{ contact.phone }} - {{ contact.message }} - {{ contact.created_at }}</li>
             {% endfor %}
         </ul>
     </div>
