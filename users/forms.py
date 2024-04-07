@@ -1,29 +1,21 @@
-# users/forms.py
-from django.contrib.auth.forms import UserCreationForm, PasswordResetForm
-from users.models import User
 from django import forms
-from .models import UserProfile
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm
+
+from services import StileFormMixin
+from users.models import User
 
 
-class UserProfileForm(forms.ModelForm):
-    class Meta:
-        model = UserProfile
-        fields = ['username', 'first_name', 'last_name', 'phone_number', 'country', 'avatar']
-
-    def __init__(self, *args, **kwargs):
-        super(UserProfileForm, self).__init__(*args, **kwargs)
-        # Добавьте настройку полей формы, если необходимо
-
-
-class UserRegisterForm(UserCreationForm):
-
+class UserRegisterForm(StileFormMixin, UserCreationForm):
     class Meta:
         model = User
-        fields = ('email', 'password1', 'password2',)
+        fields = ('email', 'password1', 'password2')
 
 
-class UserResetPasswordForm(PasswordResetForm):
-
+class UserForm(StileFormMixin, UserChangeForm):
     class Meta:
         model = User
-        fields = ('email',)
+        fields = ('email', 'phone', 'avatar')
+
+    def __int__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['password'].widget = forms.HiddenInput()
