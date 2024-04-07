@@ -3,7 +3,6 @@ import os
 import django
 from django.utils.text import slugify
 
-# Установка переменной окружения для настройки Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Django_Web_Store.settings')
 django.setup()
 
