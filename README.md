@@ -1,3 +1,1 @@
-# self_work_6
-
-Hello
+# Django_Spam_Service_2024
