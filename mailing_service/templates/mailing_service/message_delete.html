@@ -1,0 +1,17 @@
+<!-- templates/mailing_service/message_delete.html -->
+{% extends 'mailing_service/base.html' %}
+{% block title %}Подтвердить удаление сообщения - Spam Service{% endblock %}
+{% block content %}
+    <div class="container mt-5">
+        <h2>Подтвердить удаление сообщения</h2>
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <p>Вы уверены, что хотите удалить выбранные сообщения?</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Удалить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

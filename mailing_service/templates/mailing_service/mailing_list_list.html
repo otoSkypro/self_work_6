@@ -1,0 +1,34 @@
+<!-- templates/mailing_service/mailing_list_list.html -->
+{% extends 'mailing_service/base.html' %}
+{% block title %}Список рассылок - Spam Service{% endblock %}
+{% block content %}
+    <div class="container mt-5">
+        <h2>Список рассылок</h2>
+        <table class="table mt-4">
+            <thead>
+                <tr>
+                    <th>Заголовок</th>
+                    <th>Время начала</th>
+                    <th>Время окончания</th>
+                    <th>Статус</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mailing in mailings %}
+                    <tr>
+                        <td>{{ mailing.title }}</td>
+                        <td>{{ mailing.start_time }}</td>
+                        <td>{{ mailing.end_time }}</td>
+                        <td>{{ mailing.get_status_display }}</td>
+                        <td>
+                            <a href="{% url 'mailing_service:mailing_update' mailing.pk %}" class="btn btn-primary btn-sm">Редактировать</a>
+                            <a href="{% url 'mailing_service:mailing_delete' mailing.pk %}" class="btn btn-danger btn-sm">Удалить</a>
+                            <a href="{% url 'mailing_service:mailing_list_detail' mailing.pk %}" class="btn btn-info btn-sm">Детали</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

@@ -1,0 +1,73 @@
+<!-- users/templates/users/profile_update.html -->
+{% extends 'mailing_service/base.html' %}
+{% load mediapath %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+  <div class="container mt-5">
+    <h2 class="mb-4">Редактировать профиль</h2>
+
+    <form method="post" enctype="multipart/form-data" action="{% url 'users:profile_update' %}" class="row g-3">
+      {% csrf_token %}
+
+      <!-- Username -->
+      <div class="col-md-6">
+        <label for="id_username" class="form-label">Имя пользователя</label>
+        {{ form.username|as_crispy_field }}
+      </div>
+
+      <!-- First Name -->
+      <div class="col-md-6">
+        <label for="id_first_name" class="form-label">Имя</label>
+        {{ form.first_name|as_crispy_field }}
+      </div>
+
+      <!-- Last Name -->
+      <div class="col-md-6">
+        <label for="id_last_name" class="form-label">Фамилия</label>
+        {{ form.last_name|as_crispy_field }}
+      </div>
+
+      <!-- Phone Number -->
+      <div class="col-md-6">
+        <label for="id_phone_number" class="form-label">Номер телефона</label>
+        {{ form.phone_number|as_crispy_field }}
+      </div>
+
+      <!-- Country -->
+      <div class="col-md-6">
+        <label for="id_country" class="form-label">Страна</label>
+        {{ form.country|as_crispy_field }}
+      </div>
+
+      <!-- Avatar -->
+      <div class="col-md-6">
+        <label for="id_avatar" class="form-label">Аватар</label>
+        {{ form.avatar|as_crispy_field }}
+      </div>
+
+      <!-- Save Changes Button -->
+      <div class="col-12">
+        <button type="submit" class="btn btn-success">Сохранить изменения</button>
+      </div>
+    </form>
+
+    <!-- Back to Profile Button -->
+    <div class="mt-2">
+      <a class="btn btn-primary" href="{% url 'users:profile' %}">Вернуться к профилю</a>
+    </div>
+
+    <!-- Delete Account Button -->
+    <div class="mt-2">
+      <a class="btn btn-danger" href="{% url 'users:delete_account_confirm' %}">Удалить аккаунт</a>
+    </div>
+
+    <!-- Logout Button -->
+    <div class="mt-2">
+      <form action="{% url 'users:logout' %}" method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Выход</button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

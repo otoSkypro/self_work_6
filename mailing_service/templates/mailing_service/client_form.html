@@ -1,0 +1,16 @@
+<!-- templates/mailing_service/client_form.html -->
+{% extends 'mailing_service/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+  <h2>Форма клиента</h2>
+  <form method="post" action="{% url 'mailing_service:client_create' %}">
+    {% csrf_token %}
+    {{ form|crispy }}
+    <div style="margin-bottom: 10px;"></div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Сохранить</button>
+      <a href="{% url 'mailing_service:client_list' %}" class="btn btn-secondary">Отмена</a>
+    </div>
+  </form>
+{% endblock %}

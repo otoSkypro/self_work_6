@@ -1,10 +1,77 @@
-{% extends 'mailing_service/base.html' %} <!-- Наследуемся от базового шаблона -->
+<!-- templates/mailing_service/home.html -->
+{% extends 'mailing_service/base.html' %}
 
-{% load static %} <!-- Подключаем тег static -->
+{% load static %}
+{% load crispy_forms_tags %}
 
-{% block content %} <!-- Переопределяем блок content -->
+{% block content %}
 <div class="text-center mt-5">
-    <h1>Welcome to our website!</h1>
-    <p class="lead">This is the home page content.</p>
+    <h1>Spam Service</h1>
+    <h1>Добро пожаловать!</h1>
+    <p class="lead">Лучший сервис для реализации рассылок и продвижения.</p>
+    <div class="row mt-5">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Количество рассылок всего:</h5>
+                    <p class="card-text">{{ total_mailings }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Количество активных рассылок:</h5>
+                    <p class="card-text">{{ active_mailings }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Количество уникальных клиентов:</h5>
+                    <p class="card-text">{{ unique_clients }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mt-5">
+        <div class="col-md-12">
+            <h2>Самые свежие статьи блога</h2>
+        </div>
+        {% for post in latest_posts %}
+        <div class="col-md-4">
+            <div class="card mb-4">
+                {% if post.image %}
+                <img src="{{ post.image.url }}" class="card-img-top" alt="{{ post.title }}">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ post.title }}</h5>
+                    <p class="card-text">{{ post.content|truncatewords_html:20 }}</p>
+                    <a href="{% url 'blog:post_detail' post.pk %}" class="btn btn-primary">Читать далее</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="row mt-5">
+        <div class="col-md-12">
+            <h2>Самые просматриваемые статьи блога</h2>
+        </div>
+        {% for post in most_viewed_posts %}
+        <div class="col-md-4">
+            <div class="card mb-4">
+                {% if post.image %}
+                <img src="{{ post.image.url }}" class="card-img-top" alt="{{ post.title }}">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ post.title }}</h5>
+                    <p class="card-text">{{ post.content|truncatewords_html:20 }}</p>
+                    <a href="{% url 'blog:post_detail' post.pk %}" class="btn btn-primary">Читать далее</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 </div>
 {% endblock %}

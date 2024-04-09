@@ -1,0 +1,32 @@
+<!-- users/templates/users/verify_email.html -->
+{% extends 'mailing_service/base.html' %}
+
+{% block content %}
+<div class="col-12">
+    <div class="row">
+        <div class="col-6">
+            <div class="card">
+                <div class="card-header">
+                    {% if verification_result == 'success' %}
+                        <h3>Поздравляем! Вы успешно зарегистрированы!</h3>
+                    {% elif verification_result == 'error' %}
+                        <h3>Ошибка!</h3>
+                    {% else %}
+                        <h3>Подтвердите адрес электронной почты пройдя по ссылке в письме</h3>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if verification_result == 'success' %}
+                        <p>Ваш электронный адрес подтвержден!</p>
+                    {% elif verification_result == 'error' %}
+                        <p>Неверная ссылка верификации. Проверьте почту еще раз!</p>
+                    {% else %}
+                        <p>Подтвердите адрес электронной почты пройдя по ссылке в письме</p>
+                    {% endif %}
+                    <a type="button" class="btn btn-primary" href="{% url 'mailing_service:home'%}">На главную</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

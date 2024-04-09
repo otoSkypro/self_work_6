@@ -1,0 +1,20 @@
+<!-- users/templates/users/incorrect_verify.html -->
+<{% extends 'mailing_service/base.html' %}
+
+{% block content %}
+<div class="col-12">
+    <div class="row">
+        <div class="col-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Ошибка!</h3>
+                </div>
+                <div class="card-body">
+                    <p>Неверная ссылка верификации. Проверьте почту еще раз!</p>
+                    <a type="button" class="btn btn-outline-primary" href="{% url 'mailing_service:home'%}">На главную</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

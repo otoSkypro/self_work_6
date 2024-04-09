@@ -1,0 +1,17 @@
+<!-- templates/mailing_service/message_form.html -->
+{% extends 'mailing_service/base.html' %}
+{% block title %}Создать новое сообщение - Spam Service{% endblock %}
+{% block content %}
+    <div class="container mt-5">
+        <h2>Создать новое сообщение</h2>
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

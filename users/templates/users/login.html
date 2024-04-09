@@ -1,0 +1,30 @@
+<!-- users/templates/users/login.html -->
+{% extends 'mailing_service/base.html' %}
+{% load mediapath %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="col-12">
+    <div class="row">
+        <div class="col-3"></div>
+        <div class="col-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Вход</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" action="{% url 'users:login' %}?next={{ request.GET.next }}">
+                        {% csrf_token %}
+                        {{ form|crispy}}
+                        <div class="mb-3"></div>
+                        <button type="submit" class="btn btn-primary">Войти</button>
+                        <a type="button" class="btn btn-primary" href="{% url 'users:password_reset' %}">Сбросить пароль</a>
+                        <div class="mb-2"></div>
+                        <a type="button" class="btn btn-success" href="{% url 'users:register' %}">Зарегистрироваться</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

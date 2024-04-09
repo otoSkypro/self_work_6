@@ -1,0 +1,38 @@
+<!-- templates/mailing_service/sent_mailings_report.html -->
+{% extends 'mailing_service/base.html' %}
+{% block title %}Отчёт проведённых рассылок - Spam Service{% endblock %}
+{% block content %}
+    <div class="container mt-5">
+        <h2>Отчёт проведённых рассылок</h2>
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th scope="col">Название</th>
+                            <th scope="col">Время начала</th>
+                            <th scope="col">Время окончания</th>
+                            <th scope="col">Период рассылки</th>
+                            <th scope="col">Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mailing in sent_mailings %}
+                            <tr>
+                                <td>{{ mailing.title }}</td>
+                                <td>{{ mailing.start_time }}</td>
+                                <td>{{ mailing.end_time }}</td>
+                                <td>{{ mailing.get_frequency_display }}</td>
+                                <td>{{ mailing.get_status_display }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5">Нет проведённых рассылок.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

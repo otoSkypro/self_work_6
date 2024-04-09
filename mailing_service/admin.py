@@ -1,3 +1,8 @@
+# mailing_service/admin.py
 from django.contrib import admin
+from .models import Client, Mailing, Message, Log
 
-# Register your models here.
+admin.site.register(Client)
+admin.site.register(Mailing)
+admin.site.register(Message)
+admin.site.register(Log)

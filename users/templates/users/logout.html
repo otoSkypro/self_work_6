@@ -1,0 +1,7 @@
+<!-- users/templates/users/logout.html -->
+{% extends 'mailing_service/base.html' %}
+
+{% block content %}
+  <h2>Выход из аккаунта</h2>
+  <p>Вы успешно вышли из аккаунта. <a href="{% url 'users:login' %}">Войдите снова</a>, если хотите.</p>
+{% endblock %}

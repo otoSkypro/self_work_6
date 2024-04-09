@@ -1,0 +1,25 @@
+<!-- blog/templates/blog/post_detail.html -->
+{% extends "mailing_service/base.html" %}
+{% load mediapath %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+  <article class="post-detail">
+    <h1>{{ post.title }}</h1>
+    {% if post.image %}
+      <img src="{{ post.image.url }}" alt="{{ post.title }}" style="max-width: 100%;">
+    {% endif %}
+    <p>{{ post.content }}</p>
+    <p>Просмотры: {{ post.views }}</p>
+    <p>Дата публикации: {{ post.publication_date }}</p>
+
+    <!-- Добавляем кнопку "Редактировать статью" -->
+    {% if user_in_content_managers_group %}
+      <a href="{% url 'blog:post_update' post.pk %}" class="btn btn-primary">Редактировать статью</a>
+    {% endif %}
+
+    <a href="{% url 'blog:post_list' %}" class="btn btn-primary">Вернуться к списку постов</a>
+    <div class="mb-2"></div>
+    <a href="{% url 'mailing_service:home' %}" class="btn btn-primary">На главную</a>
+  </article>
+{% endblock %}

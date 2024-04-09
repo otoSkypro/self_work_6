@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 import os
 from pathlib import Path
+from django.urls import reverse_lazy
+from django.contrib.auth.decorators import login_required
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,10 +40,18 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_bootstrap5',
+    'bootstrap_datepicker_plus',
+    'django_apscheduler',
     'mailing_service',
+    'crispy_forms',
+    'django_cron',
     'bootstrap4',
+    'users',
+    'blog',
 ]
+
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
+CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap4'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -57,8 +68,7 @@ ROOT_URLCONF = 'Django_Spam_Service_2024.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates']
-        ,
+        'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -66,6 +76,10 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'users.context_processors.has_perm_can_view_dashboard',
+            ],
+            'builtins': [
+                'mailing_service.templatetags.mediapath',
             ],
         },
     },
@@ -77,7 +91,6 @@ WSGI_APPLICATION = 'Django_Spam_Service_2024.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-# Настройки базы данных PostgreSQL
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -86,6 +99,10 @@ DATABASES = {
         'PASSWORD': '12345',
         'HOST': 'localhost',
         'PORT': '5432',
+        'OPTIONS': {
+            'options': '-c search_path=public',
+            'client_encoding': 'UTF8',  # Используйте 'UTF8' вместо 'utf-8'
+        },
     }
 }
 
@@ -112,27 +129,72 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
-LANGUAGE_CODE = 'ru'
+LANGUAGE_CODE = 'ru-ru'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 
 USE_TZ = True
 
+DEFAULT_CHARSET = 'utf-8'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-# settings.py
-
+# Настройки для работы со статическими файлами
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static')
+    BASE_DIR / "static",
 ]
 
+# Настройки для работы с медиафайлами
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# settings.py
+
+# Добавьте DjangoJobStore в список JOBSTORES
+APSCHEDULER_JOBSTORES = {
+    'default': {
+        'ENGINE': 'django_apscheduler.jobstores:DjangoJobStore'
+    },
+}
+
+# Добавьте DjangoJobExecution в список MODELS
+APSCHEDULER_MODEL = 'django_apscheduler.models:DjangoJobExecution'
+
+# Настройки для работы с электронной почтой.
+# Обратите внимание, что вы должны использовать свой логин, пароль и адрес электронной почты Яндекса.
+# Теперь, когда статья достигнет 100 просмотров, вы получите письмо на указанный вами адрес электронной почты.
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.yandex.ru'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'ew.ermack2015@yandex.ru'
+EMAIL_HOST_PASSWORD = 'jzgxnpuoxukrxxez'
+DEFAULT_FROM_EMAIL = 'ew.ermack2015@yandex.ru'
+SERVER_EMAIL = 'ew.ermack2015@yandex.ru'
+EMAIL_ADMIN = EMAIL_HOST_USER
+
+
+AUTH_USER_MODEL = 'users.User'
+LOGIN_URL = 'users:login'
+LOGOUT_URL = 'users:logout'
+LOGOUT_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = reverse_lazy('mailing_service:home')
+
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+APSCHEDULER_DATETIME_FORMAT = "N j, Y, f:s a"
+
+APSCHEDULER_RUN_NOW_TIMEOUT = 25 # Seconds
