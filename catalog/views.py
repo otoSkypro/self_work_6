@@ -1,159 +1,166 @@
-# catalog/views.py
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.shortcuts import render, redirect, get_object_or_404
-from .models import Product, Contact, Version
-from .forms import ProductForm, VersionForm
-from django.contrib import messages
-from django.views import View
+from urllib import request
+
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin, UserPassesTestMixin
+from django.forms import inlineformset_factory
+from django.http import Http404
+from django.urls import reverse_lazy, reverse
+from django.views.generic import TemplateView, ListView, DetailView, CreateView, UpdateView
+
+from catalog.forms import ProductForm, VersionForm, ModeratorProductForm
+from catalog.models import Category, Product, Version
+from catalog.services import get_category_cache
+from django_online_store import settings
 
 
-class ProductListView(View):
-    def get(self, request):
-        # Упорядочиваем продукты по id перед пагинацией
-        products = Product.objects.all().order_by('id')
+class IndexView(TemplateView):
+    template_name = 'catalog/index.html'
 
-        # Добавляем информацию об активной версии для каждого продукта
-        for product in products:
-            active_version = Version.objects.filter(product=product, is_active=True).first()
-            product.active_version = active_version
-
-        # Форма для добавления новой версии
-        version_form = VersionForm()
-
-        paginator = Paginator(products, 4)  # По 4 продукта на страницу
-        page = request.GET.get('page')
-        try:
-            products = paginator.page(page)
-        except PageNotAnInteger:
-            products = paginator.page(1)
-        except EmptyPage:
-            products = paginator.page(paginator.num_pages)
-
-        return render(request, 'product_list.html', {'products': products, 'version_form': version_form})
+    def get_context_data(self, **kwargs):
+        context_data = super().get_context_data(**kwargs)
+        # context_data['object_list'] = Product.objects.all().order_by('?')[:2]
+        context_data['object_list'] = Product.objects.filter(is_published=True).order_by('?')[:2]
+        return context_data
 
 
-class CreateProductView(View):
-    def get(self, request):
-        form = ProductForm()
-        version_form = VersionForm()
-        return render(request, 'create_product.html', {'form': form, 'version_form': version_form})
+class ContactsView(TemplateView):
+    template_name = 'catalog/contacts.html'
 
-    def post(self, request):
-        form = ProductForm(request.POST, request.FILES)
-        version_form = VersionForm(request.POST)
-
-        if form.is_valid() and version_form.is_valid():
-            product = form.save()
-            product.user = self.request.user
-            product.save()
-            version = version_form.save(commit=False)
-            version.product = product
-            version.save()
-            return redirect('catalog:product_detail', product_id=product.id)
-
-        return render(request, 'create_product.html', {'form': form, 'version_form': version_form})
+    def get_context_data(self, **kwargs):
+        if self.request.method == 'POST':
+            name = self.request.POST. get('name')
+            phone = self.request.POST.get('phone')
+            email = self.request.POST.get('email')
+            message = self.request.POST.get('message')
+            print(f'Пришло сообщение:\nИмя: {name}\nТел.: {phone}\nEmail: {email}\nСообщение: {message}')
+        return super().get_context_data(**kwargs)
 
 
-class EditProductView(View):
-    def get(self, request, product_id):
-        product = get_object_or_404(Product, pk=product_id)
+class CategoryListView(ListView):
+    model = Category
 
-        # Проверяем, является ли текущий пользователь владельцем продукта
-        if not product.is_owner(request.user):
-            messages.error(request, 'У вас нет прав для редактирования этого продукта.')
-            return redirect('catalog:product_list')
+    def get_context_data(self, *args, **kwargs):
+        context_data = super().get_context_data(*args, **kwargs)
+        if settings.CASH_ALLOWED:
+            context_data['category_list'] = get_category_cache()
+            # print(context_data)
+        else:
+            context_data['category_list'] = Category.objects.all()
+        return context_data
 
-        form = ProductForm(instance=product)
-        return render(request, 'edit_product.html', {'form': form, 'product': product})
 
-    def post(self, request, product_id):
-        product = get_object_or_404(Product, pk=product_id)
+class ProductsListView(LoginRequiredMixin, ListView):
+    model = Product
 
-        # Проверяем, является ли текущий пользователь владельцем продукта
-        if not product.is_owner(request.user):
-            messages.error(request, 'У вас нет прав для редактирования этого продукта.')
-            return redirect('catalog:product_list')
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        queryset = queryset.filter(category_id=self.kwargs.get('pk'))
+        queryset = queryset.filter(is_published=True)
+        return queryset
 
-        form = ProductForm(request.POST, request.FILES, instance=product)
+
+class ProductDetailView(LoginRequiredMixin, DetailView):
+    model = Product
+
+
+    def get_context_data(self, **kwargs):
+        context_data = super().get_context_data(**kwargs)
+        data = context_data['object']
+        active_version = data.prod_name.filter(is_active=True)
+        if active_version:
+            for item in active_version:
+                data.version_number = item.version_number
+                data.version_name = item.version_name
+                context_data['version'] = f'{data.version_number} / {data.version_name}'
+        else:
+            context_data['version'] = ''
+        # print(context_data)
+        return context_data
+
+
+class ProductCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+    model = Product
+    # form_class = ProductForm
+    permission_required = 'catalog.add_product'
+    permission_denied_message = 'Доступ запрещен.'
+
+    def form_valid(self, form):
         if form.is_valid():
-            form.save()
-            messages.error(request, 'Продукт успешно отредактирован.')  # Здесь изменено
-            return redirect('catalog:product_detail', product_id=product_id)
-        return render(request, 'edit_product.html', {'form': form, 'product': product})
+            self.object = form.save()
+            self.object.user_create = self.request.user
+            self.object.save()
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('catalog:products', args=[self.object.category.pk])
+
+    def get_form_class(self):
+        if self.request.user.is_staff or self.request.user.is_superuser:
+            return ModeratorProductForm
+        return ProductForm
 
 
-class DeleteProductView(View):
-    def get(self, request, product_id):
-        product = get_object_or_404(Product, pk=product_id)
-        return render(request, 'delete_product.html', {'product': product})
+class ProductUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+    model = Product
+    form_class = ProductForm
+    permission_required = 'catalog.change_product'
+    permission_denied_message = 'Доступ запрещен.'
 
-    def post(self, request, product_id):
-        product = get_object_or_404(Product, pk=product_id)
-        product.delete()
-        messages.success(request, 'Продукт успешно удален.')
-        return redirect('catalog:product_list')
+    def get_success_url(self):
+        return reverse('catalog:products', args=[self.object.category.pk])
 
+    def get_context_data(self, **kwargs):
+        context_data = super().get_context_data(**kwargs)
+        VersionFormset = inlineformset_factory(Product, Version, form=VersionForm, extra=1)
+        if self.request.method == 'POST':
+            context_data['formset'] = VersionFormset(self.request.POST, instance=self.object)
+        else:
+            context_data['formset'] = VersionFormset(instance=self.object)
+        return context_data
 
-class HomeView(View):
-    def get(self, request):
-        latest_products = Product.objects.order_by('-created_at')[:5]
-        return render(request, 'home.html', {'latest_products': latest_products})
+    def form_valid(self, form):
+        formset = self.get_context_data()['formset']
+        self.object = form.save()
+        if self.object.user_create == self.request.user:
+            self.object.user_create = self.request.user
+        self.object.save()
+        if formset.is_valid():
+            formset.instance = self.object
+            formset.save()
+        return super().form_valid(form)
 
+    def get_object(self, *args, **kwargs):
+        product = super().get_object(*args, **kwargs)
+        if product.user_create == self.request.user or self.request.user.is_superuser or self.request.user.is_staff:
+            return product
+        return reverse('catalog:products')
 
-class ContactsView(View):
-    def get(self, request):
-        contacts = Contact.objects.all()
-        context = {'contacts': contacts}
-        return render(request, 'contacts.html', context)
-
-
-class SubmitFeedbackView(View):
-    def post(self, request):
-        name = request.POST.get('name')
-        phone = request.POST.get('phone')
-        message = request.POST.get('message')
-        contact = Contact.objects.create(name=name, phone=phone, message=message)
-        messages.success(request, 'Ваше сообщение успешно отправлено!')
-        return redirect('catalog:contacts')
-
-
-class ProductDetailView(View):
-    def get(self, request, product_id):
-        product = Product.objects.get(pk=product_id)
-        versions = Version.objects.filter(product=product)
-        version_form = VersionForm()
-
-        return render(request, 'product_detail.html', {'product': product, 'versions': versions, 'version_form': version_form})
-
-    def post(self, request, product_id):
-        product = Product.objects.get(pk=product_id)
-        versions = Version.objects.filter(product=product)
-        version_form = VersionForm(request.POST)
-
-        if version_form.is_valid():
-            version = version_form.save(commit=False)
-            version.product = product
-            version.save()
-            return redirect('catalog:product_detail', product_id=product_id)
-
-        return render(request, 'product_detail.html', {'product': product, 'versions': versions, 'version_form': version_form})
+    def get_form_class(self):
+        if self.request.user.is_staff or self.request.user.is_superuser:
+            return ModeratorProductForm
+        return ProductForm
 
 
-class AddVersionView(View):
-    def post(self, request):
-        version_form = VersionForm(request.POST)
+class PersonalAreaView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
+    template_name = 'catalog/personal_area.html'
+    permission_required = [
+        'catalog.add_product',
+        'catalog.change_product']
+    permission_denied_message = 'Доступ запрещен.'
 
-        if version_form.is_valid():
-            product_id = request.POST.get('product_id')  # Добавьте поле product_id в форму
-            product = Product.objects.get(pk=product_id)
 
-            # Деактивируем текущую активную версию продукта
-            Version.objects.filter(product=product, is_active=True).update(is_active=False)
+class ModeratorProductsView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+    model = Product
+    permission_required = [
+        'catalog.add_product',
+        'catalog.change_product']
+    permission_denied_message = 'Доступ запрещен.'
 
-            # Создаем новую версию и делаем ее активной
-            version = version_form.save(commit=False)
-            version.product = product
-            version.is_active = True
-            version.save()
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.request.user.is_staff or self.request.user.is_superuser:
+            return queryset.all()
 
-        return redirect('catalog:product_list')
+        # для пользователя с повышенными правами(не модератор/не админ)
+        products = Product.objects.filter(user_create=self.request.user)
+        queryset = products
+        return queryset

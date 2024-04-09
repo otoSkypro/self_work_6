@@ -1,32 +1,40 @@
-# users/models.py
 from django.contrib.auth.models import AbstractUser
-from django.contrib.auth.models import User
 from django.db import models
+import uuid
 
-NULLABLE = {'blank': True, 'null': True}
+NULLABLE = {'null': True, 'blank': True}
 
 
 class User(AbstractUser):
+    """ Модель для работы с User"""
+
+    class Country(models.TextChoices):
+        RUSSIA = 'RUS', 'Россия'
+        ARMENIA = 'ARM', 'Армения'
+        BELARUS = 'BLR', 'Беларусь'
+        GERMANY = 'DEU', 'Германия'
+        GEORGIA = 'GEO', 'Грузия'
+        CHINA = 'CHN', 'Китай'
+
     username = None
-    email = models.EmailField(unique=True, verbose_name='почта')
 
-    is_active = models.BooleanField(default=False)
-    user_token = models.CharField(max_length=255, blank=True, null=True, verbose_name='token')
+    email = models.EmailField(unique=True, verbose_name='Email')
+    avatar = models.ImageField(upload_to='users/', verbose_name='Аватар', **NULLABLE)
+    phone = models.CharField(max_length=35, verbose_name='Номер телефона', **NULLABLE)
+    country = models.CharField(choices=Country.choices, verbose_name='Страна', default=Country.RUSSIA)
+    field_uuid = models.UUIDField(unique=True, default=uuid.uuid4(), verbose_name='UUID')
 
-    phone = models.CharField(max_length=35, verbose_name='телефон', **NULLABLE)
-    country = models.CharField(max_length=15, verbose_name='страна', **NULLABLE)
-    avatar = models.ImageField(upload_to='users/', verbose_name='аватар', **NULLABLE)
+    is_active = models.BooleanField(default=False, verbose_name='Признак активности')
+    is_staff = models.BooleanField(default=False, verbose_name='Признак принадлежности к админу')
+    is_superuser = models.BooleanField(default=False, verbose_name='Признак суперпользователя')
 
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ['username']
+    REQUIRED_FIELDS = []
 
+    def __str__(self):
+        return f"{self.email}/{self.is_active}"
 
-class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    email = models.EmailField(blank=True)
-    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
-    phone_number = models.CharField(max_length=15, blank=True)
-    country = models.CharField(max_length=100, blank=True)
-    first_name = models.CharField(max_length=30, blank=True)
-    last_name = models.CharField(max_length=30, blank=True)
-    username = models.CharField(max_length=150, blank=True)
+    class Meta:
+
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'

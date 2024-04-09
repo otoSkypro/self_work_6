@@ -1,145 +1,140 @@
-# users/views.py
-from django.contrib.auth.tokens import default_token_generator as token_generator
-from django.core.exceptions import ValidationError
-from django.utils.http import urlsafe_base64_decode
-from django.contrib.auth.views import LoginView
-from django.views import View
-from django.conf import settings
+from django.contrib.auth import logout
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import LoginView as BaseLoginView, PasswordResetView, PasswordResetConfirmView
 from django.core.mail import send_mail
-from django.urls import reverse_lazy
-from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView, LogoutView as DjangoLogoutView
-from django.views.generic import CreateView, TemplateView
 from django.shortcuts import render, redirect
-from users.forms import UserRegisterForm
-from users.models import User, UserProfile
-from users.utils import register_confirm
-from .forms import UserProfileForm
+from django.urls import reverse_lazy, reverse
+from django.views import View
+from django.views.generic import CreateView, UpdateView
+
+from django_online_store import settings
+from users.forms import RegisterForm, UserProfileForm, UserForgotPasswordForm, UserSetNewPasswordForm
+from users.models import User
 
 
-class ProfileView(View):
-    template_name = 'users/profile.html'
-
-    def get(self, request, *args, **kwargs):
-        if request.user.is_authenticated:
-            user_profile, created = UserProfile.objects.get_or_create(user=request.user)
-            form = UserProfileForm(instance=user_profile)
-            return render(request, self.template_name, {'form': form, 'user': request.user})
-        else:
-            return redirect('users:login')
-
-    def post(self, request, *args, **kwargs):
-        if request.user.is_authenticated:
-            user_profile, created = UserProfile.objects.get_or_create(user=request.user)
-            form = UserProfileForm(request.POST, request.FILES, instance=user_profile)
-            if form.is_valid():
-                form.save()
-                # Обновляем контекст с новыми данными пользователя
-                return render(request, self.template_name, {'form': form, 'user': request.user})
-            else:
-                print(form.errors)
-                return render(request, self.template_name, {'form': form, 'user': request.user})
-        else:
-            return redirect('users:login')
+class LoginView(BaseLoginView):
+    template_name = 'users/login.html'
 
 
-class ProfileUpdateView(View):
-    template_name = 'users/profile_update.html'
-
-    def get(self, request, *args, **kwargs):
-        user_profile, created = UserProfile.objects.get_or_create(user=request.user)
-        form = UserProfileForm(instance=user_profile)
-        return render(request, self.template_name, {'form': form})
-
-    def post(self, request, *args, **kwargs):
-        user_profile, created = UserProfile.objects.get_or_create(user=request.user)
-        form = UserProfileForm(request.POST, request.FILES, instance=user_profile)
-        if form.is_valid():
-            form.save()
-            # Обновляем соответствующие поля в User
-            request.user.username = form.cleaned_data['username']
-            request.user.first_name = form.cleaned_data['first_name']
-            request.user.last_name = form.cleaned_data['last_name']
-            request.user.phone = form.cleaned_data['phone_number']
-            request.user.country = form.cleaned_data['country']
-            request.user.avatar = form.cleaned_data['avatar']
-            request.user.save()
-
-            return render(request, 'users/profile.html', {'form': form, 'user': request.user})
-        return render(request, self.template_name, {'form': form})
+def logout_user(request):
+    logout(request)
+    return redirect('catalog:index')
 
 
 class RegisterView(CreateView):
     model = User
-    form_class = UserRegisterForm
+    form_class = RegisterForm
+    success_url = reverse_lazy('catalog:index')
     template_name = 'users/register.html'
-    success_url = reverse_lazy('users:verify_email')
 
-    def form_valid(self, form, *args, **kwargs):
-        new_user = form.save()
-        new_user.user_token = token_generator.make_token(new_user)
-        form.save()
-        register_confirm_ = register_confirm(self.request, user=new_user)
-        if not new_user.is_active:
+    def form_valid(self, form):
+        if form.is_valid():
+            user = form.save()
+            domain = 'http://127.0.0.1:8000/'
+
             send_mail(
-                subject="Подтверждение почты",
-                message=register_confirm_['message'],
-                from_email=settings.EMAIL_HOST_USER,
-                recipient_list=[new_user.email]
+                f'Подтверждение регистрации для {user.email}',
+                f"""Вы зарегистрировались на сайте Dominion Store. Необходимо подтвердить Ваш аккаунт по ссылке \n
+                {domain}{reverse('users:confirm_register', kwargs={'uuid':user.field_uuid})}""",
+                settings.EMAIL_HOST_USER,
+                [user.email]
             )
         return super().form_valid(form)
 
 
-class EmailVerifyView(View):
-    success_url = 'users/verified_email.html'
+class ConfirmUserView(View):
 
-    @staticmethod
-    def get_user(uidb64):
+    def get(self, request, uuid):
         try:
-            uid = urlsafe_base64_decode(uidb64).decode()
-            user = User.objects.get(pk=uid)
-        except (TypeError, ValueError, OverflowError, User.DoesNotExist, ValidationError):
-            user = None
-        return user
-
-    def get(self, request, uidb64, user_token):
-        user = self.get_user(uidb64)
-
-        if user is not None and user.user_token == user_token:
+            user = User.objects.get(field_uuid=uuid)
             user.is_active = True
-            user.is_staff = True
+            user.has_perm('catalog.view_product')
+            user.has_perm('blog.view_product')
             user.save()
-
-            return render(request, 'users/verified_email.html')
-        else:
-            return render(request, 'users/incorrect_verify.html')
-
-
-def verify_view(request):
-    return render(request, 'users/verify_email.html')
+            return render(request, 'users/confirm_register.html')
+        except User.DoesNotExist:
+            return render(request, 'users/error_register.html')
 
 
-class UserPasswordResetView(PasswordResetView):
-    template_name = 'users/password_reset.html'
-    email_template_name = 'users/password_reset_email.html'
-    success_url = reverse_lazy('users:password_reset_done')
+# class ResetUserPassword(View):
+#     form_class = ResetPassForm
+#     template_name = 'users/user_password_reset.html'
+#
+#     # def get_queryset(self):
+#     #     queryset = super().get_queryset()
+#     #     queryset = queryset.
+#     #     return queryset
+#     def form_valid(self, form):
+#         if form.is_valid():
+#             user = form.save()
+#             user_ = User.objects.get(email=user.email)
+#             new_pass = User.objects.make_random_password(length=8)
+#             user_.set_password(new_pass)
+#
+#             send_mail(
+#                 f'Смена пароля для  {user.email}',
+#                 f""" Для Вас сгенерирован новый пароль: \n
+#                 {new_pass}""",
+#                 settings.EMAIL_HOST_USER,
+#                 [user.email]
+#             )
+#
+#         return super().form_valid(form)
+
+# def reset_password(request):
+#     if request.method == 'POST':
+#         email = request.method.get('email')
+#         user = User.objects.get(email=email)
+#         new_pass = User.objects.make_random_password(length=8)
+#         send_mail(
+#                 f'Смена пароля для  {email}',
+#                 f""" Для Вас сгенерирован новый пароль: \n
+#                         {new_pass}""",
+#                 settings.EMAIL_HOST_USER,
+#                 [email]
+#             )
+#
+#         user.set_password(new_pass)
+#
+#     return render(request, 'users/login.html')
+
+
+# def reset_password(request):
+#     new_pass = User.objects.make_random_password(length=8)
+#     request.user.set_password(new_pass)
+#     request.user.save()
+#     send_mail(
+#             f'Смена пароля для  {request.user.email}',
+#             f""" Для Вас сгенерирован новый пароль: \n
+#             {new_pass}""",
+#             settings.EMAIL_HOST_USER,
+#             [request.user.email]
+#             )
+#     return redirect(reverse('users:login'))
+
+
+class UserProfileView(LoginRequiredMixin, UpdateView):
+    model = User
+    success_url = reverse_lazy('users:profile')
+    form_class = UserProfileForm
+
+    def get_object(self, queryset=None):
+        return self.request.user
+
+
+class UserForgotPasswordView(PasswordResetView):
+    form_class = UserForgotPasswordForm
+    template_name = 'users/user_password_reset.html'
+    success_url = reverse_lazy('catalog:index')
+    success_message = 'Письмо с инструкцией по восстановлению пароля отправлена на ваш email'
+    subject_template_name = 'users/password_subject_reset_mail.txt'
+    email_template_name = 'users/password_reset_mail.html'
 
 
 class UserPasswordResetConfirmView(PasswordResetConfirmView):
-    template_name = 'users/password_reset_confirm.html'
-    success_url = reverse_lazy('users:password_reset_complete')
+    form_class = UserSetNewPasswordForm
+    template_name = 'users/user_password_set_new.html'
+    success_url = reverse_lazy('users:login')
+    success_message = 'Пароль успешно изменен. Можете авторизоваться на сайте.'
 
 
-class PasswordResetDoneView(TemplateView):
-    template_name = 'users/password_reset_done.html'
-
-
-class PasswordResetCompleteView(TemplateView):
-    template_name = 'users/password_reset_complete.html'
-
-
-class CustomLoginView(LoginView):
-    template_name = 'users/login.html'
-
-
-class LogoutView(DjangoLogoutView):
-    template_name = 'users/logout.html'

@@ -1,32 +1,20 @@
-# catalog/urls.py
-from django.conf import settings
-from django.conf.urls.static import static
 from django.urls import path
-from .views import (
-    HomeView,
-    ContactsView,
-    SubmitFeedbackView,
-    ProductDetailView,
-    CreateProductView,
-    ProductListView,
-    EditProductView,
-    DeleteProductView,
-    AddVersionView,
-)
+from django.views.decorators.cache import cache_page, never_cache
 
-app_name = 'catalog'
+from catalog.apps import CatalogConfig
+from catalog.views import IndexView, ContactsView, CategoryListView, \
+    ProductsListView, ProductDetailView, ProductCreateView, ProductUpdateView, PersonalAreaView, ModeratorProductsView
+
+app_name = CatalogConfig.name
 
 urlpatterns = [
-    path('', HomeView.as_view(), name='home'),
+    path('home/', IndexView.as_view(), name='index'),
     path('contacts/', ContactsView.as_view(), name='contacts'),
-    path('contacts/submit/', SubmitFeedbackView.as_view(), name='submit_feedback'),
-    path('product/<int:product_id>/', ProductDetailView.as_view(), name='product_detail'),
-    path('create_product/', CreateProductView.as_view(), name='create_product'),
-    path('products/', ProductListView.as_view(), name='product_list'),
-    path('product/<int:product_id>/edit/', EditProductView.as_view(), name='edit_product'),
-    path('product/<int:product_id>/delete/', DeleteProductView.as_view(), name='delete_product'),
-    path('add_version/', AddVersionView.as_view(), name='add_version'),
+    path('category/', CategoryListView.as_view(), name='category'),
+    path('<int:pk>/products/', ProductsListView.as_view(), name='products'),
+    path('<int:pk>/product_detail/', cache_page(120)(ProductDetailView.as_view()), name='product_detail'),
+    path('personal_area/', PersonalAreaView.as_view(), name='personal_area'),
+    path('personal_area/all_products', ModeratorProductsView.as_view(), name='moderator_products_list'),
+    path('personal_area/save_product/', never_cache(ProductCreateView.as_view()), name='save_product'),
+    path('<int:pk>/edit_product/', never_cache(ProductUpdateView.as_view()), name='update_product')
 ]
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

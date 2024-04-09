@@ -1,26 +1,50 @@
-from django.contrib.auth.forms import UserCreationForm, PasswordResetForm
-from users.models import User
 from django import forms
-from .models import UserProfile
+from django.contrib.auth.forms import UserChangeForm, UserCreationForm, PasswordResetForm, SetPasswordForm
+from django.forms import HiddenInput
+
+from catalog.forms import CrispyFormMixin
+from users.models import User
 
 
-class UserProfileForm(forms.ModelForm):
+class UserForm(CrispyFormMixin, UserChangeForm):
     class Meta:
-        model = UserProfile
-        fields = ['username', 'first_name', 'last_name', 'phone_number', 'country', 'avatar']
+        model = User
+        fields = '__all__'
+
+
+class RegisterForm(CrispyFormMixin, UserCreationForm):
+    class Meta:
+        model = User
+        fields = ('email', 'password1', 'password2')
+
+
+class UserForgotPasswordForm(PasswordResetForm):
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     for field in self.fields:
+    #         self.fields[field].widget.attrs.update({
+    #             'class': 'form-control',
+    #             'autocomplite': 'off'
+    #         })
+    pass
+
+
+class UserSetNewPasswordForm(SetPasswordForm):
+    pass
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     for field in self.fields:
+    #         self.fields[field].widget.attrs.update({
+    #             'class': 'form-control',
+    #             'autocomplete': 'off'
+    #         })
+
+
+class UserProfileForm(CrispyFormMixin, UserChangeForm):
+    class Meta:
+        model = User
+        fields = ('email', 'password', 'phone', 'avatar', 'country')
 
     def __init__(self, *args, **kwargs):
-        super(UserProfileForm, self).__init__(*args, **kwargs)
-        # Добавьте настройку полей формы, если необходимо
-
-
-class UserRegisterForm(UserCreationForm):
-    class Meta:
-        model = User
-        fields = ('email', 'password1', 'password2',)
-
-
-class UserResetPasswordForm(PasswordResetForm):
-    class Meta:
-        model = User
-        fields = ('email',)
+        super().__init__(*args, **kwargs)
+        self.fields['password'].widget = HiddenInput()

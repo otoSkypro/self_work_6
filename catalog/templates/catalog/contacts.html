@@ -1,0 +1,52 @@
+{% extends 'catalog/base.html' %}
+
+{% block content %}
+    <div class="container">
+        <div class="row text-start">
+            <div class="col-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="my-0 font-weight-normal">Отдел продаж:</h4>
+                        <h6 class="my-3 font-weight-normal">тел. +7-800-250-35-45</h6>
+                    </div>
+                </div>
+            </div>
+            <div class="col-2"></div>
+            <div class="col-lg-5 col-md-4 col-sm-12">
+                <div class="card mb-4 box-shadow">
+                    <div class="card-header">
+                        <h4 class="my-0 font-weight-normal text-center">Обратная связь</h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" class="form-floating">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="name">Имя</label>
+                                <input type="text" name="name" class="form-control" id="name" placeholder="Ваше имя"
+                                       required/>
+                            </div>
+                            <div class="mb-3">
+                                <label for="phone">Телефон</label>
+                                <input type="text" name="phone" class="form-control" id="phone"
+                                       placeholder="Контактный телефон" required/>
+                            </div>
+                            <div class="mb-3">
+                                <label for="email">Email</label>
+                                <input type="email" name="email" class="form-control" id="email"
+                                       placeholder="Email" required/>
+                            </div>
+                            <div class="mb-3">
+                                <label for="message">Сообщение</label>
+                                <textarea type="text" name="message" class="form-control" id="message"
+                                          placeholder="Сообщение" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-lg btn-outline-primary" value="submit">
+                                Отправить
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,29 +1,26 @@
-<!-- users/templates/users/login.html -->
-{% extends 'base.html' %}
-{% load mediapath %}
-{% load crispy_forms_tags %}
+{% extends 'catalog/base.html' %}
+{% load crispy_forms_filters %}
+
 
 {% block content %}
-<div class="col-12">
+
     <div class="row">
         <div class="col-3"></div>
-        <div class="col-6">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Вход</h3>
+            <div class="col-6">
+                <div class="card text-center">
+                    <div class="card-header"></div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            {{ form | crispy }}
+                            <button type="submit" class="w-75 btn btn-lg btn-primary ">Войти</button>
+                        </form>
+                        <br>
+                        <a href="{% url 'users:password_reset' %}">Забыли пароль?</a>
                 </div>
-                <div class="card-body">
-                    <form method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        {{ form|crispy}}
-                        <div class="mb-3"></div> <!-- Добавленный элемент с пробелом -->
-                        <button type="submit" class="btn btn-outline-primary">Войти</button>
-                        <a type="button" class="btn btn-outline-primary" href="{% url 'users:password_reset' %}">Сбросить пароль</a>
-                    </form>
-                </div>
+                    <div class="card-footer"></div>
             </div>
         </div>
     </div>
-</div>
 
 {% endblock %}
