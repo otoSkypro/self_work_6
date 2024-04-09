@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "django-spam-service-2024"
+version = "0.1.0"
+description = ""
+authors = ["Евгений Ермак <144560375+EvgeniiErmak@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+django = "^5.0.1"
+psycopg2 = "^2.9.9"
+django-apscheduler = "^0.6.2"
+django-bootstrap4 = "^23.4"
+django-bootstrap5 = "^23.4"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
