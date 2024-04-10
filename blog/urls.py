@@ -1,17 +1,14 @@
-# blog/urls.py
-from .views import PostListView, PostDetailView, PostCreateView, PostUpdateView
-from django.conf.urls.static import static
-from django.conf import settings
 from django.urls import path
 
-app_name = 'blog'
+from blog.apps import BlogConfig
+from blog.views import ArticleCreateView, ArticleListView, ArticleDetailView, ArticleUpdateView, ArticleDeleteView
+
+app_name = BlogConfig.name
 
 urlpatterns = [
-    path('', PostListView.as_view(), name='post_list'),
-    path('<int:pk>/', PostDetailView.as_view(), name='post_detail'),
-    path('create/', PostCreateView.as_view(), name='post_create'),  # Добавляем путь для создания статьи
-    path('<int:pk>/update/', PostUpdateView.as_view(), name='post_update'),  # Добавляем путь для редактирования статьи
+    path('new_article/', ArticleCreateView.as_view(), name='create_article'),
+    path('article_list/', ArticleListView.as_view(), name='article_list'),
+    path('article_detail/<int:pk>/', ArticleDetailView.as_view(), name='article_detail'),
+    path('article_edit/<int:pk>/', ArticleUpdateView.as_view(), name='article_update'),
+    path('article_del/<int:pk>/', ArticleDeleteView.as_view(), name='article_delete'),
 ]
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

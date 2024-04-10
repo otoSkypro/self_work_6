@@ -1,224 +1,152 @@
-# users/views.py
-from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView, LogoutView as DjangoLogoutView
-from django.contrib.auth.tokens import default_token_generator as token_generator
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import CreateView, TemplateView
-from django.utils.http import urlsafe_base64_decode
-from django.core.exceptions import ValidationError
-from django.contrib.auth.views import LoginView
-from mailing_service.models import Mailing
-from users.models import User, UserProfile
-from users.forms import UserRegisterForm
-from users.utils import register_confirm
 from django.contrib.auth import logout
-from django.core.mail import send_mail
-from django.urls import reverse_lazy
-from django.contrib import messages
-from .forms import UserProfileForm
-from django.conf import settings
-from django.urls import reverse
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.auth.models import Group, Permission
+from django.shortcuts import render, redirect
+from django.contrib.auth.views import LoginView as BaseLoginView, PasswordResetView, PasswordResetConfirmView
+from django.urls import reverse_lazy, reverse
 from django.views import View
+from django.views.generic import CreateView, UpdateView, ListView, DeleteView, DetailView
+
+from users.forms import RegisterForm, UserForgotPasswordForm, UserSetNewPasswordForm, UserProfileForm, ModeratorForm
+from users.models import User
+
+from users.services import send_verify_email
 
 
-class ModeratorDashboardView(PermissionRequiredMixin, View):
-    # Устанавливаем необходимые разрешения для модератора
-    permission_required = 'users.can_view_dashboard'
-
-    def get(self, request):
-        # Получаем список всех пользователей
-        users = User.objects.all()
-        # Получаем список всех рассылок
-        mailings = Mailing.objects.all()
-        # Передаем значения в контекст шаблона
-        return render(request, 'users/moderator_dashboard.html', {'users': users, 'mailings': mailings, 'has_perm_can_view_dashboard': request.user.has_perm('users.can_view_dashboard')})
-
-    def post(self, request):
-        # Получаем список всех пользователей
-        users = User.objects.all()
-        # Получаем список всех рассылок
-        mailings = Mailing.objects.all()
-
-        # Проверяем, был ли передан POST-запрос для блокировки пользователя
-        if 'block_user' in request.POST:
-            user_id = request.POST.get('user_id')
-            user = get_object_or_404(User, id=user_id)
-            user.is_active = False
-            user.save()
-            # После блокировки пользователя перенаправляем на страницу с пользователями
-            return redirect(reverse('users:moderator_dashboard'))
-
-        # Проверяем, был ли передан POST-запрос для разблокировки пользователя
-        elif 'unblock_user' in request.POST:
-            user_id = request.POST.get('user_id')
-            user = get_object_or_404(User, id=user_id)
-            user.is_active = True
-            user.save()
-            # После разблокировки пользователя перенаправляем на страницу с пользователями
-            return redirect(reverse('users:moderator_dashboard'))
-
-        # Проверяем, был ли передан POST-запрос для блокировки рассылки
-        elif 'block_mailing' in request.POST:
-            mailing_id = request.POST.get('mailing_id')
-            mailing = get_object_or_404(Mailing, id=mailing_id)
-            mailing.status = 'blocked'
-            mailing.save()
-            # После блокировки рассылки перенаправляем на страницу с рассылками
-            return redirect(reverse('users:moderator_dashboard'))
-
-        # Проверяем, был ли передан POST-запрос для разблокировки рассылки
-        elif 'unblock_mailing' in request.POST:
-            mailing_id = request.POST.get('mailing_id')
-            mailing = get_object_or_404(Mailing, id=mailing_id)
-            mailing.status = 'started'
-            mailing.save()
-            # После разблокировки рассылки перенаправляем на страницу с рассылками
-            return redirect(reverse('users:moderator_dashboard'))
-
-        return render(request, 'users/moderator_dashboard.html', {'users': users, 'mailings': mailings})
+class LoginView(BaseLoginView):
+    """ Контроллера Входа(Login) """
+    template_name = 'users/login.html'
 
 
-class ProfileView(View):
-    template_name = 'users/profile.html'
-
-    def get(self, request, *args, **kwargs):
-        if request.user.is_authenticated:
-            user_profile, created = UserProfile.objects.get_or_create(user=request.user)
-            form = UserProfileForm(instance=user_profile)
-            return render(request, self.template_name, {'form': form, 'user': request.user})
-        else:
-            return redirect('users:login')
-
-    def post(self, request, *args, **kwargs):
-        if request.user.is_authenticated:
-            user_profile, created = UserProfile.objects.get_or_create(user=request.user)
-            form = UserProfileForm(request.POST, request.FILES, instance=user_profile)
-            if form.is_valid():
-                form.save()
-                # Обновляем контекст с новыми данными пользователя
-                return render(request, self.template_name, {'form': form, 'user': request.user})
-            else:
-                print(form.errors)
-                return render(request, self.template_name, {'form': form, 'user': request.user})
-        else:
-            return redirect('users:login')
+def logout_user(request):
+    """ Контроллер Выхода """
+    logout(request)
+    return redirect('mail_sender:index')
 
 
-class ProfileUpdateView(View):
-    template_name = 'users/profile_update.html'
-
-    def get(self, request, *args, **kwargs):
-        user_profile, created = UserProfile.objects.get_or_create(user=request.user)
-        form = UserProfileForm(instance=user_profile)
-        return render(request, self.template_name, {'form': form})
-
-    def post(self, request, *args, **kwargs):
-        user_profile, created = UserProfile.objects.get_or_create(user=request.user)
-        form = UserProfileForm(request.POST, request.FILES, instance=user_profile)
-        if form.is_valid():
-            form.save()
-            # Обновляем соответствующие поля в User
-            request.user.username = form.cleaned_data['username']
-            request.user.first_name = form.cleaned_data['first_name']
-            request.user.last_name = form.cleaned_data['last_name']
-            request.user.phone = form.cleaned_data['phone_number']
-            request.user.country = form.cleaned_data['country']
-            request.user.avatar = form.cleaned_data['avatar']
-            request.user.save()
-
-            return render(request, 'users/profile.html', {'form': form, 'user': request.user})
-        return render(request, self.template_name, {'form': form})
-
-
-class RegisterView(CreateView):
+class RegisterUserView(CreateView):
+    """ Контроллер для регистрации пользователя """
     model = User
-    form_class = UserRegisterForm
+    form_class = RegisterForm
     template_name = 'users/register.html'
-    success_url = reverse_lazy('users:verify_email')
+    success_url = reverse_lazy('mail_sender:index')
 
-    def form_valid(self, form, *args, **kwargs):
-        new_user = form.save()
-        new_user.user_token = token_generator.make_token(new_user)
-        form.save()
-        register_confirm_ = register_confirm(self.request, user=new_user)
-        if not new_user.is_active:
-            send_mail(
-                subject="Подтверждение почты",
-                message=register_confirm_['message'],
-                from_email=settings.EMAIL_HOST_USER,
-                recipient_list=[new_user.email]
-            )
+    def form_valid(self, form):
+        if form.is_valid():
+            user = form.save()
+            send_verify_email(user)
+
         return super().form_valid(form)
 
 
-class EmailVerifyView(View):
-    success_url = 'users/verified_email.html'
-
-    @staticmethod
-    def get_user(uidb64):
+class ConfirmVerifyUser(View):
+    """ Верификация пользователя. """
+    def get(self, request, uuid):
         try:
-            uid = urlsafe_base64_decode(uidb64).decode()
-            user = User.objects.get(pk=uid)
-        except (TypeError, ValueError, OverflowError, User.DoesNotExist, ValidationError):
-            user = None
-        return user
-
-    def get(self, request, uidb64, user_token):
-        user = self.get_user(uidb64)
-
-        if user is not None and user.user_token == user_token:
+            user = User.objects.get(field_uuid=uuid)
             user.is_active = True
-            user.is_staff = True
             user.save()
 
-            return render(request, 'users/verified_email.html')
-        else:
-            return render(request, 'users/incorrect_verify.html')
+            # создать группу и добавить пользователя в нее с правами
+            users_group, created = Group.objects.get_or_create(name='Users')
+            if created:
+                permissions = Permission.objects.filter(
+                    codename__in=['add_client', 'change_client', 'view_client', 'delete_client',
+                                  'view_mailingsettings', 'add_mailingsettings', 'change_mailingsettings',
+                                  'delete_mailingsettings',
+                                  'add_mailingmessage', 'change_mailingmessage', 'view_mailingmessage',
+                                  'delete_mailingmessage',
+                                  'view_mailinglog', 'change_user', 'delete_user']
+                )
+                users_group.permissions.set(permissions)
+            user.groups.add(users_group)
+            user.save()
+
+            return render(request, 'users/confirm_register.html')
+        except User.DoesNotExist:
+            return render(request, 'users/error_register.html')
 
 
-def verify_view(request):
-    return render(request, 'users/verify_email.html')
-
-
-class UserPasswordResetView(PasswordResetView):
-    template_name = 'users/password_reset.html'
-    email_template_name = 'users/password_reset_email.html'
-    success_url = reverse_lazy('users:password_reset_done')
+class UserForgotPasswordView(PasswordResetView):
+    """ Контроллер для восстановления забытого пароля """
+    form_class = UserForgotPasswordForm
+    template_name = 'users/user_password_reset.html'
+    success_url = reverse_lazy('mail_sender:index')
+    success_message = 'Письмо с инструкцией по восстановлению пароля отправлена на ваш email'
+    subject_template_name = 'users/password_subject_reset_mail.txt'
+    email_template_name = 'users/password_reset_mail.html'
 
 
 class UserPasswordResetConfirmView(PasswordResetConfirmView):
-    template_name = 'users/password_reset_confirm.html'
-    success_url = reverse_lazy('users:password_reset_complete')
+    """ Контроллер для подтверждения нового пароля """
+    form_class = UserSetNewPasswordForm
+    template_name = 'users/user_password_set_new.html'
+    success_url = reverse_lazy('users:login')
+    success_message = 'Пароль успешно изменен. Можете авторизоваться на сайте.'
 
 
-class PasswordResetDoneView(TemplateView):
-    template_name = 'users/password_reset_done.html'
+class UserProfileUpdateView(LoginRequiredMixin, UpdateView):
+    """ Контроллер для Профиля пользователя """
+    model = User
+    success_url = reverse_lazy('users:profile_user')
+    form_class = UserProfileForm
+
+    def get_object(self, queryset=None):
+        return self.request.user
 
 
-class PasswordResetCompleteView(TemplateView):
-    template_name = 'users/password_reset_complete.html'
+@login_required
+def get_user_profile(request):
+    user = User.objects.get(id=request.user.pk)
+    return render(request, 'users/user_profile.html', {"user": user})
 
 
-class CustomLoginView(LoginView):
-    template_name = 'users/login.html'
-    success_url = reverse_lazy('users:profile')
-
-
-class LogoutView(DjangoLogoutView):
-    template_name = 'users/logout.html'
-
-
-class DeleteAccountView(LoginRequiredMixin, View):
-    template_name = 'users/delete_account_confirm.html'
-
-    def get(self, request):
-        return render(request, self.template_name)
-
-    def post(self, request):
-        # Удаление аккаунта пользователя
-        request.user.delete()
-
-        messages.success(request, 'Ваш аккаунт успешно удален.')
+@login_required
+def delete_self_user(request):
+    """ Функция удаления пользователем своего аккаунта """
+    if request.method == 'POST':
+        user = request.user
+        user.delete()
         logout(request)
-        return redirect('mailing_service:home')
+        return redirect('mail_sender:index')
+
+
+class ModeratorListView(LoginRequiredMixin, ListView):
+    """ Контроллер для отображения всех пользователей для Модератора """
+    model = User
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.request.user.groups.filter(name='Moderator').exists():
+            queryset = queryset.filter(groups__name='Users')
+            return queryset
+        if self.request.user.is_superuser:
+            return queryset.all()
+
+
+class ModeratorUpdateUserView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+    """ Контроллер для управления статусом Пользователя """
+    model = User
+    form_class = ModeratorForm
+    permission_required = 'users.set_active'
+
+    def get_object(self, *args, **kwargs):
+        user = super().get_object(*args, **kwargs)
+        if (self.request.user.has_perm(self.permission_required) and self.request.user.is_staff) \
+                or self.request.user.is_superuser:
+            return user
+        raise PermissionError
+
+    def form_valid(self, form):
+        if form.has_changed():
+            user = self.get_object()
+            if user.is_active:
+                user.is_active = False
+            user.is_active = True
+            user.save()
+            form.save()
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('users:all_user')

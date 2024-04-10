@@ -1,37 +1,19 @@
-# blog/models.py
-from django.utils import timezone
 from django.db import models
-from PIL import Image
+
+NULLABLE = {'null': True, 'blank': True}
 
 
-class Post(models.Model):
-    title = models.CharField(max_length=200, verbose_name='Заголовок')
-    content = models.TextField(verbose_name='Содержимое статьи')
-    image = models.ImageField(upload_to='post_images', null=True, blank=True, verbose_name='Изображение')
-    views = models.PositiveIntegerField(default=0, verbose_name='Количество просмотров')
-    publication_date = models.DateTimeField(default=timezone.now, verbose_name='Дата публикации')
+class Article(models.Model):
+    """ Модель для сущности Статья """
+    title = models.CharField(max_length=150, verbose_name='Заголовок')
+    body = models.TextField(verbose_name='Содержимое')
+    image = models.ImageField(upload_to='blog/', verbose_name='Изображение', **NULLABLE)
+    count_views = models.SmallIntegerField(default=0, verbose_name='Количество просмотров')
+    date_published = models.DateTimeField(auto_now_add=True, verbose_name='Дата публикации')
 
     def __str__(self):
-        return self.title
+        return f'{self.title}/{self.count_views}/{self.date_published}'
 
-def save(self, *args, **kwargs):
-    if self.image:
-        # Проверяем, было ли изображение изменено
-        if self.id:
-            try:
-                this = Post.objects.get(id=self.id)
-                if this.image != self.image:
-                    this.image.delete(save=False)  # Удаляем старое изображение
-            except Post.DoesNotExist:
-                pass
-
-        # Масштабируем изображение перед его сохранением
-        try:
-            img = Image.open(self.image.path)
-            output_size = (500, 500)  # Установите желаемый размер
-            img.thumbnail(output_size)
-            img.save(self.image.path)
-        except Exception as e:
-            print(f"Error processing image: {e}")
-
-    super().save(*args, **kwargs)
+    class Meta:
+        verbose_name = 'Статья'
+        verbose_name_plural = 'Статьи'

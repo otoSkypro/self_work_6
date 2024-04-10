@@ -1,82 +1,59 @@
-# blog/views.py
-from django.views.generic import ListView, DetailView, CreateView, UpdateView
-from django.contrib.auth.mixins import UserPassesTestMixin
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import get_object_or_404
-from django.urls import reverse_lazy
-from .forms import PostForm
-from .models import Post
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.shortcuts import render
+from django.urls import reverse_lazy, reverse
+from django.views.generic import ListView, CreateView, DetailView, UpdateView, DeleteView
+
+from blog.forms import ArticleForm
+from blog.models import Article
+from blog.services import get_article_cache
+from config import settings
 
 
-class PostListView(LoginRequiredMixin, ListView):
-    model = Post
-    template_name = 'blog/post_list.html'
-    context_object_name = 'posts'
-    ordering = ['-publication_date']
-    paginate_by = 4
+class ArticleListView(ListView):
+    model = Article
 
-    def get_queryset(self):
-        return Post.objects.all()
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        user_in_content_managers_group = self.request.user.groups.filter(name='Content Managers').exists()
-        print("User in Content Managers group:", user_in_content_managers_group)  # Отладочная информация
-        context['user_in_content_managers_group'] = user_in_content_managers_group
-        return context
+    def get_context_data(self, *args, **kwargs):
+        context_data = super().get_context_data(*args, **kwargs)
+        if settings.CACHE_ENABLED:
+            context_data['article_list'] = get_article_cache()
+        else:
+            context_data['article_list'] = Article.objects.all()
+        return context_data
 
 
-class PostDetailView(DetailView):
-    model = Post
-    template_name = 'blog/post_detail.html'
-
-    def get(self, request, *args, **kwargs):
-        # Получаем объект статьи
-        post = get_object_or_404(Post, pk=self.kwargs['pk'])
-
-        # Увеличиваем счетчик просмотров
-        post.views += 1
-        post.save()
-
-        return super().get(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        user_in_content_managers_group = self.request.user.groups.filter(name='Content Managers').exists()
-        print("User in Content Managers group:", user_in_content_managers_group)  # Отладочная информация
-        context['user_in_content_managers_group'] = user_in_content_managers_group
-        return context
+class ArticleCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+    model = Article
+    form_class = ArticleForm
+    permission_required = 'blog.add_article'
+    success_url = reverse_lazy('blog:article_list')
 
 
-class PostCreateView(UserPassesTestMixin, CreateView):
-    model = Post
-    form_class = PostForm
-    template_name = 'blog/post_form.html'
-    success_url = reverse_lazy('blog:post_list')
+class ArticleDetailView(DetailView):
+    model = Article
 
-    def test_func(self):
-        return self.request.user.groups.filter(name='Content Managers').exists()
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        user_in_content_managers_group = self.request.user.groups.filter(name='Content Managers').exists()
-        print("User in Content Managers group:", user_in_content_managers_group)  # Отладочная информация
-        context['user_in_content_managers_group'] = user_in_content_managers_group
-        return context
+    def get_object(self, queryset=None):
+        self.object = super().get_object(queryset)
+        self.object.count_views += 1
+        self.object.save()
+        return self.object
 
 
-class PostUpdateView(UserPassesTestMixin, UpdateView):
-    model = Post
-    form_class = PostForm
-    template_name = 'blog/post_form.html'
-    success_url = reverse_lazy('blog:post_list')
+class ArticleUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+    model = Article
+    form_class = ArticleForm
+    permission_required = 'blog.change_article'
 
-    def test_func(self):
-        return self.request.user.groups.filter(name='Content Managers').exists()
+    def form_valid(self, form):
+        if form.is_valid():
+            self.object = form.save()
+            self.object.save()
+        return super().form_valid(form)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        user_in_content_managers_group = self.request.user.groups.filter(name='Content Managers').exists()
-        print("User in Content Managers group:", user_in_content_managers_group)  # Отладочная информация
-        context['user_in_content_managers_group'] = user_in_content_managers_group
-        return context
+    def get_success_url(self):
+        return reverse('blog:article_detail', args=[self.kwargs.get('pk')])
+
+
+class ArticleDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+    model = Article
+    permission_required = 'blog.delete_article'
+    success_url = reverse_lazy('blog:article_list')
